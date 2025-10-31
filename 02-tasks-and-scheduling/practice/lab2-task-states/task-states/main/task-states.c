@@ -1,30 +1,3 @@
-# Lab 2: Task States Demonstration
-
-## วัตถุประสงค์
-ศึกษา Task States ต่างๆ ใน FreeRTOS และการเปลี่ยนแปลงระหว่าง states
-
-## เวลาที่ใช้
-45 นาที
-
-## อุปกรณ์ที่ต้องใช้
-- ESP32 Development Board
-- LED 4 ดวง
-- Push Button 2 ตัว
-
-## ทฤษฎี Task States
-
-FreeRTOS มี Task States หลัก 5 สถานะ:
-1. **Running** - กำลังทำงานบน CPU
-2. **Ready** - พร้อมทำงานแต่รอ CPU
-3. **Blocked** - รอ event หรือ resource
-4. **Suspended** - ถูกหยุดโดย API call
-5. **Deleted** - Task ถูกลบแล้ว
-
-## ขั้นตอนการทดลอง
-
-### Step 1: Basic Task States Demo (20 นาที)
-
-```c
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -297,13 +270,7 @@ void app_main(void)
 
     ESP_LOGI(TAG, "All tasks created. Monitoring task states...");
 }
-```
 
-### Step 2: Advanced State Transitions (15 นาที)
-
-เพิ่มการสาธิต state transitions ที่ซับซ้อนมากขึ้น:
-
-```c
 // เพิ่มใน main file
 
 // Task ที่สาธิต self-deletion
@@ -349,11 +316,7 @@ if (control_cycle == 150 && !external_deleted) { // 15 seconds
     vTaskDelete(external_delete_handle);
     external_deleted = true;
 }
-```
 
-### Step 3: Task State Monitoring (10 นาที)
-
-```c
 // เพิ่ม function สำหรับ monitor states
 void monitor_task_states(void)
 {
@@ -387,27 +350,7 @@ void monitor_task_states(void)
         }
     }
 }
-```
 
-## การทดสอบและการสังเกต
-
-### การใช้งาน
-1. **สังเกต LED patterns** แต่ละสถานะ
-2. **กดปุ่ม GPIO0** เพื่อ Suspend/Resume task
-3. **กดปุ่ม GPIO35** เพื่อให้ semaphore
-4. **ดู Serial Monitor** เพื่อดู state transitions
-
-### สิ่งที่ควรสังเกต
-- **Running**: LED GPIO2 สว่าง + การประมวลผล
-- **Ready**: LED GPIO4 สว่าง + รอ CPU
-- **Blocked**: LED GPIO5 สว่าง + รอ semaphore/delay
-- **Suspended**: LED GPIO18 สว่าง + หยุดทำงาน
-
-## แบบฝึกหัด
-
-### Exercise 1: State Transition Counter
-
-```c
 // นับจำนวนครั้งที่ task เปลี่ยน state
 volatile uint32_t state_changes[5] = {0}; // สำหรับแต่ละ state
 
@@ -421,11 +364,7 @@ void count_state_change(eTaskState old_state, eTaskState new_state)
                  state_changes[new_state]);
     }
 }
-```
 
-### Exercise 2: Custom State Indicator
-
-```c
 void update_state_display(eTaskState current_state)
 {
     // Turn off all LEDs first
@@ -465,42 +404,3 @@ void update_state_display(eTaskState current_state)
             break;
     }
 }
-```
-
-## คำถามสำหรับวิเคราะห์
-
-1. Task อยู่ใน Running state เมื่อไหร่บ้าง?
-- Task จะอยู่ใน Running state เมื่อ scheduler เลือกให้มันเป็น task ที่กำลังใช้งาน CPU อยู่ในขณะนั้น โดยทั่วไปคือ task ที่มี priority สูงสุดในบรรดา task ที่พร้อมทำงาน (Ready)
-2. ความแตกต่างระหว่าง Ready และ Blocked state คืออะไร?
-- Ready state: Task พร้อมจะทำงาน แต่ยังไม่ได้ถูกเลือกให้รัน เพราะมี task อื่นที่ priority สูงกว่ากำลังรันอยู่
-- Blocked state: Task กำลังรอเหตุการณ์บางอย่าง เช่น การหน่วงเวลา (vTaskDelay()), รอ semaphore, หรือรอ queue
-3. การใช้ vTaskDelay() ทำให้ task อยู่ใน state ใด?
-- เมื่อเรียก vTaskDelay() task จะถูกย้ายไปอยู่ใน Blocked state เป็นเวลาที่กำหนด และจะกลับมาเป็น Ready เมื่อเวลานั้นครบ
-4. การ Suspend task ต่างจาก Block อย่างไร?
-- การ Suspend จะหยุด task ไว้อย่างไม่มีกำหนดจนกว่าจะถูก Resume กลับมา ส่วน Block จะหยุดชั่วคราวตามเงื่อนไข เช่น หมดเวลาหรือมีสัญญาณจาก resource ที่รออยู่
-5. Task ที่ถูก Delete จะกลับมาได้หรือไม่?
-- ไม่ได้ครับ — เมื่อ task ถูกลบด้วย vTaskDelete() หน่วยความจำและ stack ของ task นั้นจะถูกคืนให้ระบบ และจะไม่สามารถกลับมาทำงานได้อีก เว้นแต่จะสร้างใหม่ด้วย xTaskCreate()
-
-## ผลการทดลองที่คาดหวัง
-
-| State | เงื่อนไข | LED | ระยะเวลา |
-|-------|----------|-----|----------|
-| Running | ทำงานจริง | GPIO2 | สั้น |
-| Ready | รอ CPU | GPIO4 | สั้นมาก |
-| Blocked | รอ semaphore/delay | GPIO5 | ยาว |
-| Suspended | กดปุ่ม | GPIO18 | จนกว่าจะ resume |
-
-## บทสรุป
-
-การทดลองนี้แสดงให้เห็นถึง:
-1. **Task Lifecycle** - วงจรชีวิตของ task
-2. **State Transitions** - การเปลี่ยนแปลงสถานะ
-3. **Blocking Operations** - การรอ resources
-4. **Manual Control** - การควบคุม task states
-5. **Monitoring** - การติดตาม task behavior
-
-**Key Learnings:**
-- เข้าใจ task states ช่วยใน debugging
-- การ design task ให้มี appropriate blocking
-- การใช้ suspend/resume อย่างถูกต้อง
-- การ monitor performance และ behavior

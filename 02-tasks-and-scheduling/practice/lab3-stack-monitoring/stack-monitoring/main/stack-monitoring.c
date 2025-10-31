@@ -1,28 +1,3 @@
-# Lab 3: Stack Monitoring และ Debugging
-
-## วัตถุประสงค์
-เรียนรู้การจัดการและตรวจสอบ Stack Memory ใน FreeRTOS เพื่อป้องกัน Stack Overflow
-
-## เวลาที่ใช้
-30 นาที
-
-## อุปกรณ์ที่ต้องใช้
-- ESP32 Development Board
-- LED 2 ดวง (สำหรับสถานะ)
-
-## ทฤษฎี Stack Management
-
-### Stack ใน FreeRTOS
-- แต่ละ Task มี Stack เป็นของตัวเอง
-- Stack เก็บ local variables, function parameters, return addresses
-- Stack Overflow เป็นปัญหาที่พบบ่อยใน embedded systems
-- FreeRTOS มี built-in stack monitoring features
-
-## ขั้นตอนการทดลอง
-
-### Step 1: Basic Stack Monitoring (15 นาที)
-
-```c
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -308,13 +283,7 @@ void app_main(void)
     ESP_LOGI(TAG, "All tasks created. Monitor will report every 3 seconds.");
     ESP_LOGW(TAG, "Watch for stack warnings from Heavy Task!");
 }
-```
 
-### Step 2: Stack Overflow Detection (10 นาที)
-
-เพิ่มการตรวจจับ Stack Overflow:
-
-```c
 // เพิ่มใน main file
 
 // Stack overflow hook function
@@ -337,11 +306,7 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 
 // เพิ่มใน sdkconfig หรือ menuconfig:
 // CONFIG_FREERTOS_CHECK_STACKOVERFLOW=2 (ตรวจสอบแบบเต็ม)
-```
 
-### Step 3: Stack Optimization (5 นาที)
-
-```c
 // Optimized version ของ heavy task
 void optimized_heavy_task(void *pvParameters)
 {
@@ -391,26 +356,7 @@ void optimized_heavy_task(void *pvParameters)
     free(large_numbers);
     free(another_buffer);
 }
-```
 
-## การทดสอบและวิเคราะห์
-
-### การสังเกต
-1. **LED GPIO2** - สว่างเมื่อ stack ทุก task ปลอดภัย
-2. **LED GPIO4** - สว่าง/กระพริบเมื่อมี stack warning/critical
-3. **Serial Monitor** - แสดงรายงาน stack usage ทุก 3 วินาที
-
-### การวิเคราะห์ผลลัพธ์
-- **Light Task** - ใช้ stack น้อย มี remaining มาก
-- **Medium Task** - ใช้ stack ปานกลาง
-- **Heavy Task** - ใช้ stack มาก อาจมี warning
-- **Recursion Demo** - แสดง stack usage ที่เพิ่มขึ้นตาม depth
-
-## แบบฝึกหัด
-
-### Exercise 1: Stack Size Optimization
-
-```c
 // ทดสอบ stack size ต่างๆ
 void test_stack_sizes(void)
 {
@@ -427,11 +373,7 @@ void test_stack_sizes(void)
                  test_sizes[i], result == pdPASS ? "Created" : "Failed");
     }
 }
-```
 
-### Exercise 2: Dynamic Stack Monitoring
-
-```c
 void dynamic_stack_monitor(TaskHandle_t task_handle, const char* task_name)
 {
     static UBaseType_t previous_remaining = 0;
@@ -448,62 +390,3 @@ void dynamic_stack_monitor(TaskHandle_t task_handle, const char* task_name)
     
     previous_remaining = current_remaining;
 }
-```
-
-## คำถามสำหรับวิเคราะห์
-
-1. Task ไหนใช้ stack มากที่สุด? เพราะอะไร?
-- Task ที่มี การเรียกฟังก์ชันซ้อนหลายชั้น (deep function call) หรือใช้ ตัวแปรขนาดใหญ่ภายในฟังก์ชัน จะใช้ stack มากที่สุด เพราะ stack เก็บข้อมูลของการเรียกฟังก์ชันและตัวแปรภายในแต่ละระดับ
-2. การใช้ heap แทน stack มีข้อดีอย่างไร?
-- การใช้ heap ช่วยให้จัดสรรหน่วยความจำได้แบบยืดหยุ่นและใช้เฉพาะตอนจำเป็น ลดโอกาสเกิด stack overflow และทำให้ memory ใช้ร่วมกันระหว่าง tasks ได้ดีกว่า
-3. Stack overflow เกิดขึ้นเมื่อไหร่และทำอย่างไรป้องกัน?
-- Stack overflow เกิดเมื่อ task ใช้ stack เกินขนาดที่กำหนดใน xTaskCreate() มักเกิดจาก recursion หรือใช้ตัวแปรใหญ่เกินไปในฟังก์ชัน
-การป้องกันทำได้โดย:
-- ตั้งค่า stack size ให้เหมาะสม
-- หลีกเลี่ยง recursion หรือใช้ static/global variables แทน
-- เปิดใช้ตัวตรวจจับ overflow (CONFIG_FREERTOS_CHECK_STACKOVERFLOW)
-4. การตั้งค่า stack size ควรพิจารณาจากอะไร?
-- ควรพิจารณาจาก ลักษณะของ task เช่น จำนวนการเรียกฟังก์ชันซ้อน, การใช้ตัวแปรภายใน, และความถี่ในการทำงาน หาก task ทำงานซับซ้อนหรือใช้ฟังก์ชันเยอะ ควรเพิ่ม stack size ให้มากขึ้น
-5. Recursion ส่งผลต่อ stack usage อย่างไร?
-- Recursion ทำให้มีการเรียกฟังก์ชันซ้ำ ๆ และแต่ละครั้งจะสร้าง stack frame ใหม่ ส่งผลให้ใช้ stack เพิ่มขึ้นอย่างรวดเร็ว จึงควรหลีกเลี่ยงหรือจำกัดระดับ recursion เพื่อป้องกัน stack overflow
-
-## ผลการทดลองที่คาดหวัง
-
-| Task | Stack Size | Usage Pattern | Warning Level |
-|------|------------|---------------|---------------|
-| Light | 1024 bytes | 200-400 bytes used | Safe |
-| Medium | 2048 bytes | 600-800 bytes used | Safe |
-| Heavy | 2048 bytes | 1400-1800 bytes used | Warning |
-| Recursion | 3072 bytes | Varies by depth | Monitor |
-
-## การแก้ไขปัญหา Stack Overflow
-
-### วิธีการป้องกัน:
-1. **วางแผน Stack Size** - คำนวณ worst-case usage
-2. **ใช้ Heap สำหรับ Large Data** - malloc/free แทน local arrays
-3. **หลีกเลี่ยง Deep Recursion** - ใช้ iterative algorithms
-4. **Monitor Continuously** - ตรวจสอบ stack usage เป็นประจำ
-5. **Enable Stack Checking** - ใช้ FreeRTOS stack overflow detection
-
-### Configuration ที่แนะนำ:
-```c
-// ใน sdkconfig
-CONFIG_FREERTOS_CHECK_STACKOVERFLOW=2
-CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK=y
-```
-
-## บทสรุป
-
-การทดลองนี้แสดงให้เห็นถึง:
-1. **Stack Management** - การจัดการ stack อย่างมีประสิทธิภาพ
-2. **Monitoring Techniques** - เทคนิคการตรวจสอบ stack
-3. **Overflow Prevention** - การป้องกัน stack overflow
-4. **Optimization Strategies** - กลยุทธ์การ optimize stack usage
-5. **Debugging Tools** - เครื่องมือสำหรับ debug stack problems
-
-**Best Practices:**
-- ออกแบบ stack size อย่างรอบคอบ
-- Monitor stack usage เป็นประจำ
-- ใช้ heap สำหรับ large temporary data
-- Enable stack overflow checking
-- Test worst-case scenarios

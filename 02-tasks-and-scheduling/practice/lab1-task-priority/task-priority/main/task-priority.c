@@ -1,23 +1,3 @@
-# Lab 1: Task Priority และ Scheduling
-
-## วัตถุประสงค์
-ทำความเข้าใจ Priority-based Preemptive Scheduling และการทำงานของ FreeRTOS Scheduler
-
-## เวลาที่ใช้
-45 นาที
-
-## อุปกรณ์ที่ต้องใช้
-- ESP32 Development Board
-- LED 3 ดวง
-- Push Button 1 ตัว
-
-## ขั้นตอนการทดลอง
-
-### Step 1: Basic Priority Demonstration (20 นาที)
-
-สร้างโปรเจกต์ใหม่และเขียนโปรแกรม:
-
-```c
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -199,13 +179,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Press button to start priority test");
     ESP_LOGI(TAG, "Watch LEDs: GPIO2=High, GPIO4=Med, GPIO5=Low priority");
 }
-```
 
-### Step 2: Round-Robin Scheduling (15 นาที)
-
-เพิ่มการทดสอบ Round-Robin สำหรับ tasks ที่มี priority เท่ากัน:
-
-```c
 // เพิ่มใน main file
 
 // Tasks ที่มี priority เท่ากัน
@@ -268,11 +242,7 @@ void equal_priority_task3(void *pvParameters)
 xTaskCreate(equal_priority_task1, "Equal1", 2048, NULL, 2, NULL);
 xTaskCreate(equal_priority_task2, "Equal2", 2048, NULL, 2, NULL);
 xTaskCreate(equal_priority_task3, "Equal3", 2048, NULL, 2, NULL);
-```
 
-### Step 3: Priority Inversion Demo (10 นาที)
-
-```c
 // เพิ่มการสาธิต Priority Inversion (ปัญหาที่อาจเกิดขึ้น)
 
 volatile bool shared_resource_busy = false;
@@ -313,30 +283,7 @@ void priority_inversion_low(void *pvParameters)
         vTaskDelay(pdMS_TO_TICKS(3000));
     }
 }
-```
 
-## การทดสอบและวิเคราะห์
-
-### การทดสอบ
-1. **กดปุ่มเพื่อเริ่มการทดสอบ**
-2. **สังเกต LED patterns**:
-   - LED สว่างบ่อย = Task priority สูง
-   - LED สว่างน้อย = Task priority ต่ำ
-3. **ดู Serial Monitor**:
-   - สังเกตลำดับการทำงาน
-   - ดูสถิติการทำงาน
-
-### การวิเคราะห์ผลลัพธ์
-- **High Priority Task** ควรทำงานมากที่สุด
-- **Medium Priority Task** ทำงานปานกลาง
-- **Low Priority Task** ทำงานน้อยที่สุด
-- **Equal Priority Tasks** ควรทำงานสลับกัน (Round-Robin)
-
-## แบบฝึกหัด
-
-### Exercise 1: เปลี่ยน Priority แบบ Dynamic
-
-```c
 void dynamic_priority_demo(void *pvParameters)
 {
     TaskHandle_t low_task_handle = (TaskHandle_t)pvParameters;
@@ -353,56 +300,7 @@ void dynamic_priority_demo(void *pvParameters)
         vTaskPrioritySet(low_task_handle, 1);
     }
 }
-```
 
-### Exercise 2: Task Affinity (ESP32 Dual-Core)
-
-```c
 // Pin task ไปยัง specific core
 xTaskCreatePinnedToCore(high_priority_task, "HighPrio", 3072, NULL, 5, NULL, 0); // Core 0
 xTaskCreatePinnedToCore(low_priority_task, "LowPrio", 3072, NULL, 1, NULL, 1);   // Core 1
-```
-
-## คำถามสำหรับวิเคราะห์
-
-1. Priority ไหนทำงานมากที่สุด? เพราะอะไร?
-- Priority สูงสุด เพราะ Scheduler ให้ CPU กับ task ที่ priority สูงก่อนเสมอ
-2. เกิด Priority Inversion หรือไม่? จะแก้ไขได้อย่างไร?
-- เกิดเมื่อ task สูงต้องรอ task ต่ำที่ถือ resource
-- แก้ด้วย Priority Inheritance
-3. Tasks ที่มี priority เดียวกันทำงานอย่างไร?
-- สลับกันทำงานแบบ Round-Robin
-4. การเปลี่ยน Priority แบบ dynamic ส่งผลอย่างไร?
-- เปลี่ยนลำดับการทำงานของ CPU ทันที
-5. CPU utilization ของแต่ละ priority เป็นอย่างไร?
-- สูงสุดใช้ CPU มากสุด
-- ต่ำสุดทำงานเมื่อสูงกว่าทั้งหมดว่าง
-
-## ผลการทดลองที่คาดหวัง
-
-| Priority | Expected Runs | Percentage | Behavior |
-|----------|---------------|------------|----------|
-| High (5) | มากที่สุด | 40-50% | ทำงานเร็วแล้วพัก |
-| Medium (3) | ปานกลาง | 25-35% | ถูก preempt บ่อย |
-| Low (1) | น้อยที่สุด | 15-25% | ทำงานเมื่อไม่มี priority สูงกว่า |
-
-## บทสรุป
-
-การทดลองนี้แสดงให้เห็นถึง:
-1. **Priority-based Scheduling** - Task priority สูงจะทำงานก่อน
-- Task ที่มี priority สูงสุด จะได้ CPU ทำงานมากที่สุด เพราะ FreeRTOS จะเลือกให้ task ที่มี priority สูงกว่าถูกสลับขึ้นมาทำงานก่อนเสมอ (preemptive scheduling)
-2. **Preemptive Nature** - RTOS จะขัดจังหวะ task ที่ priority ต่ำกว่า
-- Priority inversion สามารถเกิดขึ้นได้ เมื่อ task ที่มี priority ต่ำถือ resource ที่ task ที่มี priority สูงต้องใช้ ทำให้ task สูงต้องรอ
-- วิธีแก้คือใช้ Priority Inheritance ซึ่งระบบจะเพิ่ม priority ของ task ที่ถือ resource ให้เท่ากับ task ที่รอ เพื่อป้องกันการค้าง
-3. **Round-Robin** - Tasks ที่ priority เท่ากันจะสลับกันทำงาน
-- Tasks ที่มี priority เท่ากันจะถูกสลับกันทำงานแบบ Round-Robin คือแบ่งเวลา (time slice) ให้แต่ละ task ทำงานทีละช่วงสั้น ๆ สลับไปมาอย่างเท่าเทียม
-4. **Priority Inversion** - ปัญหาที่อาจเกิดขึ้นและต้องระวัง
-- การเปลี่ยน priority ระหว่างรัน (dynamic) จะทำให้ระบบสลับลำดับการทำงานใหม่ทันที Task ที่ถูกเพิ่ม priority อาจแย่ง CPU จาก task เดิม ส่วนการลด priority จะทำให้ task นั้นถูกรันน้อยลง
-5. **Dynamic Priority** - สามารถเปลี่ยน priority ระหว่างทำงานได้
-- Task ที่มี priority สูงกว่า จะใช้ CPU มากกว่า เพราะจะถูกเลือกให้ทำงานก่อน ส่วน task priority ต่ำจะทำงานได้เฉพาะเมื่อไม่มี task ที่สูงกว่ารันอยู่
-
-**Key Takeaways:**
-- ออกแบบ priority อย่างรอบคอบ
-- ระวัง priority inversion
-- ใช้ appropriate delays
-- Monitor task performance
